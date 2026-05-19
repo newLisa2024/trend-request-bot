@@ -37,13 +37,21 @@ class RequestFlow(StatesGroup):
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
 def only_roma(func):
-    """Декоратор — пропускает только Рому."""
     async def wrapper(event, *args, **kwargs):
-        user_id = event.from_user.id if hasattr(event, "from_user") else None
+        if isinstance(event, Message):
+            user_id = event.from_user.id
+        elif isinstance(event, CallbackQuery):
+            user_id = event.from_user.id
+        else:
+            user_id = None
+
         if user_id != ROMA_USER_ID:
             if isinstance(event, Message):
                 await event.answer("⛔ У тебя нет доступа к этому боту.")
             return
+
+        # Убираем dispatcher из kwargs если есть
+        kwargs.pop("dispatcher", None)
         return await func(event, *args, **kwargs)
     return wrapper
 
