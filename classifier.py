@@ -116,7 +116,7 @@ req_goal (выбери одно): {json.dumps(REQ_GOALS, ensure_ascii=False)}
 req_area (массив, один или два): {json.dumps(REQ_AREAS, ensure_ascii=False)}
 active_modifiers (массив кодов): {[m.split(' — ')[0] for m in MODIFIERS]}
 solution_method (массив, 1-3 значения): {json.dumps(SOLUTION_METHODS[:15], ensure_ascii=False)} и другие
-required_role_b (одно значение): {json.dumps(REQUIRED_ROLES, ensure_keys=False, ensure_ascii=False)}
+required_role_b (одно значение): {json.dumps(REQUIRED_ROLES, ensure_ascii=False)}
 priority: {json.dumps(PRIORITIES, ensure_ascii=False)}
 
 ### Что нужно вернуть (строго JSON):
