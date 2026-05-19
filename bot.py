@@ -36,26 +36,6 @@ class RequestFlow(StatesGroup):
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
-def only_roma(func):
-    async def wrapper(event, *args, **kwargs):
-        if isinstance(event, Message):
-            user_id = event.from_user.id
-        elif isinstance(event, CallbackQuery):
-            user_id = event.from_user.id
-        else:
-            user_id = None
-
-        if user_id != ROMA_USER_ID:
-            if isinstance(event, Message):
-                await event.answer("⛔ У тебя нет доступа к этому боту.")
-            return
-
-        # Убираем dispatcher из kwargs если есть
-        kwargs.pop("dispatcher", None)
-        return await func(event, *args, **kwargs)
-    return wrapper
-
-
 def make_resident_keyboard(residents: list[dict]) -> InlineKeyboardMarkup:
     buttons = [
         [InlineKeyboardButton(
@@ -103,8 +83,10 @@ def format_preview(classified: dict, resident_name: str) -> str:
 # ── Handlers ───────────────────────────────────────────────────────────────────
 
 @dp.message(CommandStart())
-@only_roma
 async def cmd_start(message: Message, state: FSMContext):
+    if message.from_user.id != ROMA_USER_ID:
+        await message.answer("⛔ У тебя нет доступа к этому боту.")
+        return
     await state.clear()
     await state.set_state(RequestFlow.waiting_resident)
     await message.answer(
@@ -113,8 +95,10 @@ async def cmd_start(message: Message, state: FSMContext):
 
 
 @dp.message(F.text == "/cancel")
-@only_roma
 async def cmd_cancel(message: Message, state: FSMContext):
+    if message.from_user.id != ROMA_USER_ID:
+        await message.answer("⛔ У тебя нет доступа к этому боту.")
+        return
     await state.clear()
     await state.set_state(RequestFlow.waiting_resident)
     await message.answer("❌ Отменено. Отправь ФИО резидента чтобы начать заново.")
@@ -123,8 +107,10 @@ async def cmd_cancel(message: Message, state: FSMContext):
 # ── Шаг 1: Ищем резидента ─────────────────────────────────────────────────────
 
 @dp.message(RequestFlow.waiting_resident, F.text)
-@only_roma
 async def handle_resident_name(message: Message, state: FSMContext):
+    if message.from_user.id != ROMA_USER_ID:
+        await message.answer("⛔ У тебя нет доступа к этому боту.")
+        return
     query = message.text.strip()
     if len(query) < 2:
         await message.answer("Введи хотя бы 2 символа для поиска.")
@@ -168,8 +154,9 @@ async def handle_resident_name(message: Message, state: FSMContext):
 # ── Шаг 1b: Выбор резидента из списка ─────────────────────────────────────────
 
 @dp.callback_query(RequestFlow.confirming_resident, F.data.startswith("res:"))
-@only_roma
 async def handle_resident_choice(callback: CallbackQuery, state: FSMContext):
+    if callback.from_user.id != ROMA_USER_ID:
+        return
     parts = callback.data.split(":", 2)
     resident_id = parts[1]
 
@@ -193,8 +180,10 @@ async def handle_resident_choice(callback: CallbackQuery, state: FSMContext):
 # ── Шаг 2: Принимаем запрос (текст или голос) ─────────────────────────────────
 
 @dp.message(RequestFlow.waiting_request, F.text | F.voice)
-@only_roma
 async def handle_request_input(message: Message, state: FSMContext):
+    if message.from_user.id != ROMA_USER_ID:
+        await message.answer("⛔ У тебя нет доступа к этому боту.")
+        return
     data = await state.get_data()
     resident_name = data.get("resident_name", "")
 
@@ -242,8 +231,9 @@ async def handle_request_input(message: Message, state: FSMContext):
 # ── Шаг 3: Подтверждение и сохранение ─────────────────────────────────────────
 
 @dp.callback_query(RequestFlow.showing_preview, F.data.startswith("confirm:"))
-@only_roma
 async def handle_confirm(callback: CallbackQuery, state: FSMContext):
+    if callback.from_user.id != ROMA_USER_ID:
+        return
     action = callback.data.split(":")[1]
 
     if action == "cancel":
@@ -321,8 +311,10 @@ async def handle_confirm(callback: CallbackQuery, state: FSMContext):
 # ── Fallback ───────────────────────────────────────────────────────────────────
 
 @dp.message()
-@only_roma
 async def fallback(message: Message, state: FSMContext):
+    if message.from_user.id != ROMA_USER_ID:
+        await message.answer("⛔ У тебя нет доступа к этому боту.")
+        return
     current_state = await state.get_state()
     if current_state is None:
         await state.set_state(RequestFlow.waiting_resident)
