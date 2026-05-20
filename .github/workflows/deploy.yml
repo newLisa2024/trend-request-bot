@@ -1,0 +1,23 @@
+name: Deploy Trend Bot
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /var/www/trend-request-bot
+            git pull origin main
+            source venv/bin/activate
+            pip install -r requirements.txt
+            systemctl restart trend-bot
