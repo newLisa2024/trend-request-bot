@@ -228,6 +228,17 @@ async def handle_request_input(message: Message, state: FSMContext):
         )
 
 
+async def run_scoring(request_id: str):
+    import asyncio
+    proc = await asyncio.create_subprocess_exec(
+        "node", "--env-file=.env", "score_new_request.js",
+        env={**__import__("os").environ, "REQUEST_ID": request_id},
+        cwd="/var/www/trend-request-bot"
+    )
+    await proc.wait()
+    log.info(f"Scoring done for request {request_id}, exit code: {proc.returncode}")
+
+
 # ── Шаг 3: Подтверждение и сохранение ─────────────────────────────────────────
 
 @dp.callback_query(RequestFlow.showing_preview, F.data.startswith("confirm:"))
@@ -291,6 +302,7 @@ async def handle_confirm(callback: CallbackQuery, state: FSMContext):
         request_id = inserted["id"]
         try:
             await trigger_embedding(request_id)
+            asyncio.create_task(run_scoring(request_id))
         except Exception as e:
             log.warning(f"Embedding error: {e}")
 
