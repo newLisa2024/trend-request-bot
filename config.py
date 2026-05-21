@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-ROMA_USER_ID = int(os.getenv("ROMA_USER_ID", "0"))  # Telegram ID Ромы
+ALLOWED_USER_IDS = set(int(x) for x in os.getenv("ALLOWED_USER_IDS", "0").split(",") if x.strip())
 
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")

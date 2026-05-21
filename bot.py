@@ -13,7 +13,7 @@ from aiogram.types import (
 
 import httpx
 
-from config import BOT_TOKEN, ROMA_USER_ID
+from config import BOT_TOKEN, ALLOWED_USER_IDS
 from db import search_residents, insert_request, trigger_embedding
 from transcriber import transcribe_voice
 from classifier import classify_request
@@ -84,7 +84,7 @@ def format_preview(classified: dict, resident_name: str) -> str:
 
 @dp.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):
-    if message.from_user.id != ROMA_USER_ID:
+    if message.from_user.id not in ALLOWED_USER_IDS:
         await message.answer("⛔ У тебя нет доступа к этому боту.")
         return
     await state.clear()
@@ -96,7 +96,7 @@ async def cmd_start(message: Message, state: FSMContext):
 
 @dp.message(F.text == "/cancel")
 async def cmd_cancel(message: Message, state: FSMContext):
-    if message.from_user.id != ROMA_USER_ID:
+    if message.from_user.id not in ALLOWED_USER_IDS:
         await message.answer("⛔ У тебя нет доступа к этому боту.")
         return
     await state.clear()
@@ -108,7 +108,7 @@ async def cmd_cancel(message: Message, state: FSMContext):
 
 @dp.message(RequestFlow.waiting_resident, F.text)
 async def handle_resident_name(message: Message, state: FSMContext):
-    if message.from_user.id != ROMA_USER_ID:
+    if message.from_user.id not in ALLOWED_USER_IDS:
         await message.answer("⛔ У тебя нет доступа к этому боту.")
         return
     query = message.text.strip()
@@ -155,7 +155,7 @@ async def handle_resident_name(message: Message, state: FSMContext):
 
 @dp.callback_query(RequestFlow.confirming_resident, F.data.startswith("res:"))
 async def handle_resident_choice(callback: CallbackQuery, state: FSMContext):
-    if callback.from_user.id != ROMA_USER_ID:
+    if callback.from_user.id not in ALLOWED_USER_IDS:
         return
     parts = callback.data.split(":", 2)
     resident_id = parts[1]
@@ -181,7 +181,7 @@ async def handle_resident_choice(callback: CallbackQuery, state: FSMContext):
 
 @dp.message(RequestFlow.waiting_request, F.text | F.voice)
 async def handle_request_input(message: Message, state: FSMContext):
-    if message.from_user.id != ROMA_USER_ID:
+    if message.from_user.id not in ALLOWED_USER_IDS:
         await message.answer("⛔ У тебя нет доступа к этому боту.")
         return
     data = await state.get_data()
@@ -243,7 +243,7 @@ async def run_scoring(request_id: str):
 
 @dp.callback_query(RequestFlow.showing_preview, F.data.startswith("confirm:"))
 async def handle_confirm(callback: CallbackQuery, state: FSMContext):
-    if callback.from_user.id != ROMA_USER_ID:
+    if callback.from_user.id not in ALLOWED_USER_IDS:
         return
     action = callback.data.split(":")[1]
 
@@ -330,7 +330,7 @@ async def handle_confirm(callback: CallbackQuery, state: FSMContext):
 
 @dp.message()
 async def fallback(message: Message, state: FSMContext):
-    if message.from_user.id != ROMA_USER_ID:
+    if message.from_user.id not in ALLOWED_USER_IDS:
         await message.answer("⛔ У тебя нет доступа к этому боту.")
         return
     current_state = await state.get_state()
