@@ -250,7 +250,6 @@ async function saveResults(requestId, residentId, expertises, scores) {
     return {
       request_id:       requestId,
       expertise_id:     s.expertise_id,
-      resident_a_id:    residentId,
       resident_b_id:    residentBId,
       sphere_score:     s.sphere_score,
       sphere_reason:    s.sphere_reason,
