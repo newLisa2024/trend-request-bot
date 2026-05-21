@@ -241,19 +241,25 @@ async function scoreBatch(request, expertises, residentAName, retries = 2) {
   }
 }
 
-async function saveResults(requestId, expertises, scores) {
+async function saveResults(requestId, residentId, expertises, scores) {
   if (DRY_RUN) return { saved: scores.length, errors: 0 };
 
-  const rows = scores.map(s => ({
-    request_id:       requestId,
-    expertise_id:     s.expertise_id,
-    sphere_score:     s.sphere_score,
-    sphere_reason:    s.sphere_reason,
-    expertise_score:  s.expertise_score,
-    expertise_reason: s.expertise_reason,
-    score_summary:    s.score_summary,
-    model:            MODEL,
-  }));
+  const rows = scores.map(s => {
+    const exp = expertises.find(e => e.id === s.expertise_id);
+    const residentBId = exp?.residents?.[0]?.residents?.id || exp?.resident_expertise?.[0]?.resident_id || null;
+    return {
+      request_id:       requestId,
+      expertise_id:     s.expertise_id,
+      resident_a_id:    residentId,
+      resident_b_id:    residentBId,
+      sphere_score:     s.sphere_score,
+      sphere_reason:    s.sphere_reason,
+      expertise_score:  s.expertise_score,
+      expertise_reason: s.expertise_reason,
+      score_summary:    s.score_summary,
+      model:            MODEL,
+    };
+  });
 
   const { error } = await supabase.from('ai_pair_scores')
     .upsert(rows, { onConflict: 'request_id,expertise_id' });
@@ -349,7 +355,7 @@ async function main() {
     const results = await Promise.all(chunk.map(async batchIds => {
       const expertises = await loadExpertiseBatch(batchIds);
       const scores     = await scoreBatch(request, expertises, residentName);
-      return saveResults(request.id, expertises, scores);
+      return saveResults(request.id, request.resident_id, expertises, scores);
     }));
     results.forEach(r => { saved += r.saved; errors += r.errors; });
     const done = saved + errors + cached.size;
