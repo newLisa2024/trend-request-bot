@@ -14,7 +14,7 @@ from aiogram.types import (
 import httpx
 
 from config import BOT_TOKEN, ROMA_USER_ID
-from db import search_residents, insert_request
+from db import search_residents, insert_request, trigger_embedding
 from transcriber import transcribe_voice
 from classifier import classify_request
 
@@ -287,6 +287,12 @@ async def handle_confirm(callback: CallbackQuery, state: FSMContext):
         inserted = insert_request(row)
         if not inserted:
             raise Exception("Supabase вернул пустой ответ")
+
+        request_id = inserted["id"]
+        try:
+            await trigger_embedding(request_id)
+        except Exception as e:
+            log.warning(f"Embedding error: {e}")
 
         await state.clear()
         await state.set_state(RequestFlow.waiting_resident)

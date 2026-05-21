@@ -31,3 +31,13 @@ def insert_request(data: dict) -> dict | None:
     """Вставляет запрос в таблицу requests."""
     result = supabase.from_("requests").insert(data).execute()
     return result.data[0] if result.data else None
+
+
+async def trigger_embedding(request_id: str):
+    async with httpx.AsyncClient(timeout=30) as client:
+        resp = await client.post(
+            f"{SUPABASE_URL}/functions/v1/generate-embedding",
+            json={"table": "requests", "id": request_id},
+            headers={"Authorization": f"Bearer {SUPABASE_SERVICE_KEY}"},
+        )
+        return resp.json()
