@@ -193,7 +193,7 @@ async def handle_request_input(message: Message, state: FSMContext):
         # Транскрибация голосового
         if message.voice:
             voice_file = await bot.get_file(message.voice.file_id)
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(timeout=60) as client:
                 resp = await client.get(
                     f"https://api.telegram.org/file/bot{BOT_TOKEN}/{voice_file.file_path}"
                 )
