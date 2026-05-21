@@ -228,15 +228,34 @@ async def handle_request_input(message: Message, state: FSMContext):
         )
 
 
-async def run_scoring(request_id: str):
+async def run_scoring(request_id: str, resident_id: str):
     import asyncio
-    proc = await asyncio.create_subprocess_exec(
+    import os
+    env = {**os.environ, "REQUEST_ID": request_id}
+    cwd = "/var/www/trend-request-bot"
+
+    # Шаг 1: скоринг нового запроса
+    log.info(f"Starting scoring for request {request_id}")
+    proc1 = await asyncio.create_subprocess_exec(
         "node", "--env-file=.env", "score_new_request.js",
-        env={**__import__("os").environ, "REQUEST_ID": request_id},
-        cwd="/var/www/trend-request-bot"
+        env=env, cwd=cwd
     )
-    await proc.wait()
-    log.info(f"Scoring done for request {request_id}, exit code: {proc.returncode}")
+    await proc1.wait()
+    log.info(f"Scoring done, exit code: {proc1.returncode}")
+
+    if proc1.returncode != 0:
+        log.warning(f"Scoring failed for request {request_id}, skipping matching")
+        return
+
+    # Шаг 2: матчинг для резидента
+    log.info(f"Starting matching for resident {resident_id}")
+    env2 = {**os.environ, "RESIDENT_IDS": resident_id, "MIN_SCORE": "50", "TOP_N": "999"}
+    proc2 = await asyncio.create_subprocess_exec(
+        "node", "--env-file=.env", "assemble_matches.js",
+        env=env2, cwd=cwd
+    )
+    await proc2.wait()
+    log.info(f"Matching done, exit code: {proc2.returncode}")
 
 
 # ── Шаг 3: Подтверждение и сохранение ─────────────────────────────────────────
@@ -302,7 +321,7 @@ async def handle_confirm(callback: CallbackQuery, state: FSMContext):
         request_id = inserted["id"]
         try:
             await trigger_embedding(request_id)
-            asyncio.create_task(run_scoring(request_id))
+            asyncio.create_task(run_scoring(request_id, resident_id))
         except Exception as e:
             log.warning(f"Embedding error: {e}")
 

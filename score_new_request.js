@@ -21,7 +21,7 @@ import { dirname, join }  from 'path';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const SUPABASE_URL  = process.env.SUPABASE_URL  || 'https://wterixeqalajjxavdiss.supabase.co';
-const SUPABASE_KEY  = process.env.SUPABASE_KEY;
+const SUPABASE_KEY  = process.env.SUPABASE_KEY || process.env.SUPABASE_SERVICE_KEY;
 const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
 const REQUEST_ID    = process.env.REQUEST_ID;
 const DRY_RUN       = process.env.DRY_RUN === '1';
